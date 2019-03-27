@@ -1,0 +1,8 @@
+language: java
+jdk:
+  - openjdk8
+  - openjdk9
+  - openjdk10
+  - openjdk11
+after_script:
+  - ./gradlew run & APIURL=http://localhost:7000/api ./spec-api/run-api-tests.sh
