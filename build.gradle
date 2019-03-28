@@ -2,10 +2,12 @@ group 'io.realworld'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = "1.3.+"
-    ext.ktor_version = "1.1.3"
-    ext.junit_version = "4.12"
-    ext.unirest_version = "1.4.9"
+    ext {
+        kotlin_version = "1.3.+"
+        ktor_version = "1.1.3"
+        junit_version = "4.12"
+        unirest_version = "1.4.9"
+    }
 
     repositories {
         mavenCentral()
@@ -18,7 +20,7 @@ buildscript {
 
 apply plugin: 'kotlin'
 apply plugin: 'application'
-mainClassName = "io.realworld.app.AppKt"
+mainClassName = "io.ktor.server.netty.EngineMain"
 
 repositories {
     mavenCentral()
@@ -27,7 +29,8 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    compile "io.ktor:ktor-server-core:$ktor_version"
+    compile "io.ktor:ktor-server-netty:$ktor_version"
+    compile "io.ktor:ktor-jackson:$ktor_version"
 
     testCompile "junit:junit:$junit_version"
     testCompile "com.mashape.unirest:unirest-java:$unirest_version"
