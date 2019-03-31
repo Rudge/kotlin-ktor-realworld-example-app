@@ -9,6 +9,7 @@ import io.ktor.routing.post
 import io.ktor.routing.put
 import io.ktor.routing.route
 import io.realworld.app.web.controllers.ArticleController
+import io.realworld.app.web.controllers.CommentController
 
 fun Routing.users() {
     route("users") {
@@ -31,14 +32,14 @@ fun Routing.profiles() {
     }
 }
 
-fun Routing.articles(articleController: ArticleController) {
+fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
     route("articles") {
         get("feed") { call.respond(articleController.feed(this.context)) }
         route("{slug}") {
             route("comments") {
-                post { call.respond("") }
-                get { call.respond("") }
-                delete("{id}") { call.respond("") }
+                post { call.respond(commentController.add(this.context)) }
+                get { call.respond(commentController.findBySlug(this.context)) }
+                delete("{id}") { call.respond(commentController.delete(this.context)) }
             }
             route("favorite") {
                 post { call.respond(articleController.favorite(this.context)) }
