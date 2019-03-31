@@ -10,6 +10,7 @@ import io.ktor.routing.put
 import io.ktor.routing.route
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
+import io.realworld.app.web.controllers.ProfileController
 
 fun Routing.users() {
     route("users") {
@@ -22,12 +23,12 @@ fun Routing.users() {
     }
 }
 
-fun Routing.profiles() {
+fun Routing.profiles(profileController: ProfileController) {
     route("profiles/{username}") {
-        get { call.respond("") }
+        get { call.respond(profileController.get(this.context)) }
         route("follow") {
-            post { call.respond("") }
-            delete { call.respond("") }
+            post { call.respond(profileController.follow(this.context)) }
+            delete { call.respond(profileController.unfollow(this.context)) }
         }
     }
 }

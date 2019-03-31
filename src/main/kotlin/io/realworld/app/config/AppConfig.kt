@@ -8,6 +8,7 @@ import io.ktor.routing.routing
 import io.realworld.app.web.articles
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
+import io.realworld.app.web.controllers.ProfileController
 import io.realworld.app.web.profiles
 import io.realworld.app.web.tags
 import io.realworld.app.web.users
@@ -19,7 +20,7 @@ fun Application.mainModule() {
     }
     routing {
         users()
-        profiles()
+        profiles(ProfileController())
         articles(ArticleController(), CommentController())
         tags()
     }
