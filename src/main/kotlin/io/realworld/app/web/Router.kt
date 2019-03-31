@@ -11,6 +11,7 @@ import io.ktor.routing.route
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
 import io.realworld.app.web.controllers.ProfileController
+import io.realworld.app.web.controllers.TagController
 
 fun Routing.users() {
     route("users") {
@@ -55,8 +56,8 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
     }
 }
 
-fun Routing.tags() {
+fun Routing.tags(tagController: TagController) {
     route("tags") {
-        get { call.respond("") }
+        get { call.respond(tagController.get()) }
     }
 }
