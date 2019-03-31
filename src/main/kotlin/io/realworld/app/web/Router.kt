@@ -12,15 +12,16 @@ import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
 import io.realworld.app.web.controllers.ProfileController
 import io.realworld.app.web.controllers.TagController
+import io.realworld.app.web.controllers.UserController
 
-fun Routing.users() {
+fun Routing.users(userController: UserController) {
     route("users") {
-        post { call.respond("") }
-        post("login") { call.respond("") }
+        post { call.respond(userController.register(this.context)) }
+        post("login") { call.respond(userController.login(this.context)) }
     }
     route("user") {
-        get { call.respond("") }
-        put { call.respond("") }
+        get { call.respond(userController.getCurrent(this.context)) }
+        put { call.respond(userController.update(this.context)) }
     }
 }
 
