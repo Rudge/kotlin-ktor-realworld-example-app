@@ -8,9 +8,9 @@ import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.put
 import io.ktor.routing.route
+import io.realworld.app.web.controllers.ArticleController
 
-fun Routing.root() {
-    get("/") { call.respond(Pair("test", "Hello World")) }
+fun Routing.users() {
     route("users") {
         post { call.respond("") }
         post("login") { call.respond("") }
@@ -19,32 +19,41 @@ fun Routing.root() {
         get { call.respond("") }
         put { call.respond("") }
     }
-    route("profiles/:username") {
+}
+
+fun Routing.profiles() {
+    route("profiles/{username}") {
         get { call.respond("") }
         route("follow") {
             post { call.respond("") }
             delete { call.respond("") }
         }
     }
+}
+
+fun Routing.articles(articleController: ArticleController) {
     route("articles") {
-        get("feed") { call.respond("") }
-        route(":slug") {
+        get("feed") { call.respond(articleController.feed(this.context)) }
+        route("{slug}") {
             route("comments") {
                 post { call.respond("") }
                 get { call.respond("") }
-                delete(":id") { call.respond("") }
+                delete("{id}") { call.respond("") }
             }
             route("favorite") {
-                post { call.respond("") }
-                delete { call.respond("") }
+                post { call.respond(articleController.favorite(this.context)) }
+                delete { call.respond(articleController.unfavorite(this.context)) }
             }
-            get { call.respond("") }
-            put { call.respond("") }
-            delete { call.respond("") }
+            get { call.respond(articleController.get(this.context)) }
+            put { call.respond(articleController.update(this.context)) }
+            delete { call.respond(articleController.delete(this.context)) }
         }
-        get { call.respond("") }
-        post { call.respond("") }
+        get { call.respond(articleController.findBy(this.context)) }
+        post { call.respond(articleController.create(this.context)) }
     }
+}
+
+fun Routing.tags() {
     route("tags") {
         get { call.respond("") }
     }

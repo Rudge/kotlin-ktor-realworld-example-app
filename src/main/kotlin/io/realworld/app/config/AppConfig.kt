@@ -5,7 +5,11 @@ import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.jackson.jackson
 import io.ktor.routing.routing
-import io.realworld.app.web.root
+import io.realworld.app.web.articles
+import io.realworld.app.web.controllers.ArticleController
+import io.realworld.app.web.profiles
+import io.realworld.app.web.tags
+import io.realworld.app.web.users
 
 fun Application.mainModule() {
     install(ContentNegotiation) {
@@ -13,6 +17,9 @@ fun Application.mainModule() {
         }
     }
     routing {
-        root()
+        users()
+        profiles()
+        articles(ArticleController())
+        tags()
     }
 }
