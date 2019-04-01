@@ -14,16 +14,23 @@ import io.realworld.app.web.controllers.UserController
 import io.realworld.app.web.profiles
 import io.realworld.app.web.tags
 import io.realworld.app.web.users
+import org.kodein.di.generic.instance
 
 fun Application.mainModule() {
+    val userController by ModulesConfig.kodein.instance<UserController>()
+    val profileController by ModulesConfig.kodein.instance<ProfileController>()
+    val articleController by ModulesConfig.kodein.instance<ArticleController>()
+    val commentController by ModulesConfig.kodein.instance<CommentController>()
+    val tagController by ModulesConfig.kodein.instance<TagController>()
+
     install(ContentNegotiation) {
         jackson {
         }
     }
     routing {
-        users(UserController())
-        profiles(ProfileController())
-        articles(ArticleController(), CommentController())
-        tags(TagController())
+        users(userController)
+        profiles(profileController)
+        articles(articleController, commentController)
+        tags(tagController)
     }
 }
