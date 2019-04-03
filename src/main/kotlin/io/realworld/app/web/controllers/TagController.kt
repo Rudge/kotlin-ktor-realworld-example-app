@@ -1,10 +1,11 @@
 package io.realworld.app.web.controllers
 
-class TagController {
-    //class TagController(private val tagService: TagService) {
-    fun get() {
-//        tagService.findAll().also { tagDto ->
-//            ctx.json(tagDto)
-//        }
+import io.ktor.application.ApplicationCall
+import io.ktor.response.respond
+import io.realworld.app.domain.service.TagService
+
+class TagController(private val tagService: TagService) {
+    suspend fun get(ctx: ApplicationCall) = tagService.findAll().also { tagDto ->
+        ctx.respond(tagDto)
     }
 }

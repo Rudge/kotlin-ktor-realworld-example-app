@@ -1,5 +1,7 @@
 package io.realworld.app.config
 
+import io.realworld.app.domain.repository.TagRepository
+import io.realworld.app.domain.service.TagService
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
 import io.realworld.app.web.controllers.ProfileController
@@ -7,6 +9,7 @@ import io.realworld.app.web.controllers.TagController
 import io.realworld.app.web.controllers.UserController
 import org.kodein.di.Kodein
 import org.kodein.di.generic.bind
+import org.kodein.di.generic.instance
 import org.kodein.di.generic.singleton
 
 object ModulesConfig {
@@ -23,7 +26,9 @@ object ModulesConfig {
         bind() from singleton { CommentController() }
     }
     private val tagModule = Kodein.Module("TAG") {
-        bind() from singleton { TagController() }
+        bind() from singleton { TagController(instance()) }
+        bind() from singleton { TagService(instance()) }
+        bind() from singleton { TagRepository() }
     }
     internal val kodein = Kodein {
         import(userModule)

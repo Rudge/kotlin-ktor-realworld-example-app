@@ -59,6 +59,6 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
 
 fun Routing.tags(tagController: TagController) {
     route("tags") {
-        get { call.respond(tagController.get()) }
+        get { tagController.get(this.context) }
     }
 }
