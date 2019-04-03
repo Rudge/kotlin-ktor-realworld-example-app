@@ -7,6 +7,7 @@ import io.ktor.jackson.jackson
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 import io.realworld.app.web.articles
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
@@ -20,7 +21,10 @@ import org.kodein.di.generic.instance
 
 const val SERVER_PORT = 8080
 
-fun setup() = embeddedServer(Netty, port = SERVER_PORT, module = Application::mainModule)
+fun setup(): NettyApplicationEngine {
+    DbConfig.setup("jdbc:h2:mem:", "sa", "")
+    return embeddedServer(Netty, port = SERVER_PORT, module = Application::mainModule)
+}
 
 fun Application.mainModule() {
     val userController by ModulesConfig.kodein.instance<UserController>()
