@@ -14,6 +14,7 @@ class AppRule : ExternalResource() {
 
     override fun before() {
         app.start()
+        TimeUnit.MILLISECONDS.sleep(500)
         http = HttpUtil(port)
     }
 

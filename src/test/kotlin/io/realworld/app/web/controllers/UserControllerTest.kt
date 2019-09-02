@@ -31,9 +31,9 @@ class UserControllerTest {
     fun `success login with email and password`() {
         val email = "success_login@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "user_name_test")
+        appRule.http.registerUser(email, password, "success_login")
         val userDTO = UserDTO(User(email = email, password = password))
-        val response = appRule.http.post<UserDTO>("/api/users/login", userDTO)
+        val response = appRule.http.post<UserDTO>("/users/login", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.email, userDTO.user?.email)
@@ -45,10 +45,10 @@ class UserControllerTest {
         val userDTO = UserDTO(
             User(
                 email = "success_register@valid_email.com", password = "Test", username =
-                "username_test"
+                "success_register"
             )
         )
-        val response = appRule.http.post<UserDTO>("/api/users", userDTO)
+        val response = appRule.http.post<UserDTO>("/users", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.username, userDTO.user?.username)
@@ -66,9 +66,9 @@ class UserControllerTest {
     fun `get current user by token`() {
         val email = "get_current@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "username_Test")
+        appRule.http.registerUser(email, password, "get_current")
         appRule.http.loginAndSetTokenHeader(email, password)
-        val response = appRule.http.get<UserDTO>("/api/user")
+        val response = appRule.http.get<UserDTO>("/user")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.user?.username)
@@ -78,13 +78,13 @@ class UserControllerTest {
 
     @Test
     fun `update user data`() {
-        val email = "email_valid@valid_email.com"
+        val email = "update_email@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "username_Test")
+        appRule.http.registerUser(email, password, "update_email")
 
-        appRule.http.loginAndSetTokenHeader("email_valid@valid_email.com", "Test")
+        appRule.http.loginAndSetTokenHeader("update_email@valid_email.com", "Test")
         val userDTO = UserDTO(User(email = "update_user@update_test.com", password = "Test"))
-        val response = appRule.http.put<UserDTO>("/api/user", userDTO)
+        val response = appRule.http.put<UserDTO>("/user", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.email, userDTO.user?.email)
