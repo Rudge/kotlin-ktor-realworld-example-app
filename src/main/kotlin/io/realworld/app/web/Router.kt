@@ -1,7 +1,6 @@
 package io.realworld.app.web
 
-import io.ktor.application.call
-import io.ktor.response.respond
+import io.ktor.auth.authenticate
 import io.ktor.routing.Routing
 import io.ktor.routing.delete
 import io.ktor.routing.get
@@ -16,49 +15,63 @@ import io.realworld.app.web.controllers.UserController
 
 fun Routing.users(userController: UserController) {
     route("users") {
-        post { call.respond(userController.register(this.context)) }
-        post("login") { call.respond(userController.login(this.context)) }
+        post { userController.register(this.context) }
+        post("login") { userController.login(this.context) }
     }
     route("user") {
-        get { call.respond(userController.getCurrent(this.context)) }
-        put { call.respond(userController.update(this.context)) }
+        authenticate {
+            get { userController.getCurrent(this.context) }
+            put { userController.update(this.context) }
+        }
     }
 }
 
 fun Routing.profiles(profileController: ProfileController) {
     route("profiles/{username}") {
-        get { call.respond(profileController.get(this.context)) }
-        route("follow") {
-            post { call.respond(profileController.follow(this.context)) }
-            delete { call.respond(profileController.unfollow(this.context)) }
+        authenticate(optional = true) {
+            get { profileController.get(this.context) }
+        }
+        authenticate {
+            route("follow") {
+                post { profileController.follow(this.context) }
+                delete { profileController.unfollow(this.context) }
+            }
         }
     }
 }
 
 fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
     route("articles") {
-        get("feed") { call.respond(articleController.feed(this.context)) }
-        route("{slug}") {
-            route("comments") {
-                post { call.respond(commentController.add(this.context)) }
-                get { call.respond(commentController.findBySlug(this.context)) }
-                delete("{id}") { call.respond(commentController.delete(this.context)) }
+        authenticate {
+            get("feed") { articleController.feed(this.context) }
+            route("{slug}") {
+                route("comments") {
+                    post { commentController.add(this.context) }
+                    authenticate(optional = true) {
+                        get { commentController.findBySlug(this.context) }
+                    }
+                    delete("{id}") { commentController.delete(this.context) }
+                }
+                route("favorite") {
+                    post { articleController.favorite(this.context) }
+                    delete { articleController.unfavorite(this.context) }
+                }
+                get { articleController.get(this.context) }
+                put { articleController.update(this.context) }
+                delete { articleController.delete(this.context) }
             }
-            route("favorite") {
-                post { call.respond(articleController.favorite(this.context)) }
-                delete { call.respond(articleController.unfavorite(this.context)) }
+            authenticate(optional = true) {
+                get { articleController.findBy(this.context) }
             }
-            get { call.respond(articleController.get(this.context)) }
-            put { call.respond(articleController.update(this.context)) }
-            delete { call.respond(articleController.delete(this.context)) }
+            post { articleController.create(this.context) }
         }
-        get { call.respond(articleController.findBy(this.context)) }
-        post { call.respond(articleController.create(this.context)) }
     }
 }
 
 fun Routing.tags(tagController: TagController) {
     route("tags") {
-        get { tagController.get(this.context) }
+        authenticate(optional = true) {
+            get { tagController.get(this.context) }
+        }
     }
 }
