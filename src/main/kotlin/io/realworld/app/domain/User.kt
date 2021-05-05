@@ -6,33 +6,33 @@ import io.realworld.app.ext.isEmailValid
 data class UserDTO(val user: User? = null) {
     fun validRegister(): User {
         require(
-            user == null ||
-                user.email.isEmailValid() ||
-                user.password.isNullOrBlank() ||
+            user != null &&
+                user.email.isEmailValid() &&
+                user.password.isNullOrBlank() &&
                 user.username.isNullOrBlank()
         ) { "User is invalid." }
-        return user!!
+        return user
     }
 
     fun validLogin(): User {
         require(
-            user == null ||
-                user.email.isEmailValid() ||
+            user != null &&
+                user.email.isEmailValid() &&
                 user.password.isNullOrBlank()
         ) { "Email or password is invalid." }
-        return user!!
+        return user
     }
 
     fun validToUpdate(): User {
         require(
-            user == null ||
-                user.email.isEmailValid() ||
-                user.password.isNullOrBlank() ||
-                user.username.isNullOrBlank() ||
-                user.bio.isNullOrBlank() ||
+            user != null &&
+                user.email.isEmailValid() &&
+                user.password.isNullOrBlank() &&
+                user.username.isNullOrBlank() &&
+                user.bio.isNullOrBlank() &&
                 user.image.isNullOrBlank()
         ) { "User is invalid." }
-        return user!!
+        return user
     }
 }
 
