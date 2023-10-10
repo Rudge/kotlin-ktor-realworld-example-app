@@ -10,7 +10,7 @@ buildscript {
         hikaricp_version = "3.3.1"
         h2_version = "1.4.199"
         exposed_version = "0.14.1"
-        junit_version = "4.12"
+        junit_version = "4.13.2"
         unirest_version = "1.4.9"
     }
 
