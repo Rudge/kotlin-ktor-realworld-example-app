@@ -8,7 +8,7 @@ buildscript {
         ktor_version = "1.2.3"
         kodein_version = "6.1.0"
         hikaricp_version = "3.3.1"
-        h2_version = "1.4.199"
+        h2_version = "2.2.224"
         exposed_version = "0.14.1"
         junit_version = "4.13.2"
         unirest_version = "1.4.9"
