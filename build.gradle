@@ -7,7 +7,7 @@ buildscript {
         slf4j_version = "2.0.9"
         ktor_version = "1.2.3"
         kodein_version = "6.5.5"
-        hikaricp_version = "3.3.1"
+        hikaricp_version = "5.1.0"
         h2_version = "2.2.224"
         exposed_version = "0.14.1"
         junit_version = "4.13.2"
