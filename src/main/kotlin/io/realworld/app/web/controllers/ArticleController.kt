@@ -1,77 +1,80 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.auth.authentication
+import io.ktor.auth.principal
+import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.ArticlesDTO
+import io.realworld.app.domain.User
+import io.realworld.app.domain.service.ArticleService
 
-class ArticleController {
-//class ArticleController(private val articleService: ArticleService) {
+class ArticleController(private val articleService: ArticleService) {
 
-    fun findBy(ctx: ApplicationCall): ArticlesDTO {
-        val tag = ctx.parameters["tag"]
-        val author = ctx.parameters["author"]
-        val favorited = ctx.parameters["favorited"]
-        val limit = ctx.parameters["limit"] ?: "20"
-        val offset = ctx.parameters["offset"] ?: "0"
-//        articleService.findBy(tag, author, favorited, limit.toInt(), offset.toInt()).also { articles ->
-//            ctx.json(ArticlesDTO(articles, articles.size))
-//        }
-        return ArticlesDTO(listOf(), 1)
+    suspend fun findBy(ctx: ApplicationCall) {
+        val tag = ctx.request.queryParameters["tag"]
+        val author = ctx.request.queryParameters["author"]
+        val favorited = ctx.request.queryParameters["favorited"]
+        val limit = ctx.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        val offset = ctx.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+        val currentUser = ctx.authentication.principal<User>()
+        val articles = articleService.findBy(tag, author, favorited, currentUser?.id, limit, offset)
+        ctx.respond(ArticlesDTO(articles, articles.size))
     }
 
-    fun feed(ctx: ApplicationCall): ArticlesDTO {
-        val limit = ctx.parameters["limit"] ?: "20"
-        val offset = ctx.parameters["offset"] ?: "0"
-//        articleService.findFeed(ctx.attribute("email"), limit.toInt(), offset.toInt()).also { articles ->
-//            ctx.json(ArticlesDTO(articles, articles.size))
-//        }
-        return ArticlesDTO(listOf(), 1)
+    suspend fun feed(ctx: ApplicationCall) {
+        val limit = ctx.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        val offset = ctx.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+        val currentUser = ctx.authentication.principal<User>()
+        val articles = articleService.findFeed(currentUser?.id, limit, offset)
+        ctx.respond(ArticlesDTO(articles, articles.size))
     }
 
-    fun get(ctx: ApplicationCall): ArticleDTO {
-        ctx.parameters["slug"]
-        //                articleService.findBySlug(slug).apply {
-//                    ctx.json(ArticleDTO(this))
-//                }
-        return ArticleDTO(null)
+    suspend fun get(ctx: ApplicationCall) {
+        val slug = ctx.parameters["slug"]!!
+        val currentUser = ctx.authentication.principal<User>()
+        val article = articleService.findBySlug(slug, currentUser?.id)
+        if (article != null) ctx.respond(ArticleDTO(article))
+        else ctx.respond(HttpStatusCode.NotFound)
     }
 
-    suspend fun create(ctx: ApplicationCall): ArticleDTO {
-        ctx.receive<ArticleDTO>()
-        //            articleService.create(ctx.attribute("email"), article).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun create(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email!!
+        val articleDTO = ctx.receive<ArticleDTO>()
+        val article = articleService.create(email, articleDTO.article!!)
+        ctx.respond(ArticleDTO(article))
     }
 
-    suspend fun update(ctx: ApplicationCall): ArticleDTO {
-        val slug = ctx.parameters["slug"]
-        ctx.receive<ArticleDTO>()
-        //            articleService.update(slug, article).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun update(ctx: ApplicationCall) {
+        val slug = ctx.parameters["slug"]!!
+        val currentUser = ctx.authentication.principal<User>()
+        val articleDTO = ctx.receive<ArticleDTO>()
+        val article = articleService.update(slug, articleDTO.article!!, currentUser?.id)
+        if (article != null) ctx.respond(ArticleDTO(article))
+        else ctx.respond(HttpStatusCode.NotFound)
     }
 
-    fun delete(ctx: ApplicationCall) {
-        ctx.parameters["slug"]
-        //            articleService.delete(slug)
+    suspend fun delete(ctx: ApplicationCall) {
+        val slug = ctx.parameters["slug"]!!
+        articleService.delete(slug)
+        ctx.respond(HttpStatusCode.OK)
     }
 
-    fun favorite(ctx: ApplicationCall): ArticleDTO {
-        ctx.parameters["slug"]
-        //            articleService.favorite(ctx.attribute("email"), slug).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun favorite(ctx: ApplicationCall) {
+        val slug = ctx.parameters["slug"]!!
+        val email = ctx.authentication.principal<User>()?.email!!
+        val article = articleService.favorite(email, slug)
+        if (article != null) ctx.respond(ArticleDTO(article))
+        else ctx.respond(HttpStatusCode.NotFound)
     }
 
-    fun unfavorite(ctx: ApplicationCall): ArticleDTO {
-        ctx.parameters["slug"]
-        //            articleService.unfavorite(ctx.attribute("email"), slug).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun unfavorite(ctx: ApplicationCall) {
+        val slug = ctx.parameters["slug"]!!
+        val email = ctx.authentication.principal<User>()?.email!!
+        val article = articleService.unfavorite(email, slug)
+        if (article != null) ctx.respond(ArticleDTO(article))
+        else ctx.respond(HttpStatusCode.NotFound)
     }
 }

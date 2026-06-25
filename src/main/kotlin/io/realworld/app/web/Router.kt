@@ -14,11 +14,11 @@ import io.realworld.app.web.controllers.TagController
 import io.realworld.app.web.controllers.UserController
 
 fun Routing.users(userController: UserController) {
-    route("users") {
+    route("api/users") {
         post { userController.register(this.context) }
         post("login") { userController.login(this.context) }
     }
-    route("user") {
+    route("api/user") {
         authenticate {
             get { userController.getCurrent(this.context) }
             put { userController.update(this.context) }
@@ -27,49 +27,45 @@ fun Routing.users(userController: UserController) {
 }
 
 fun Routing.profiles(profileController: ProfileController) {
-    route("profiles/{username}") {
+    route("api/profiles/{username}") {
         authenticate(optional = true) {
             get { profileController.get(this.context) }
         }
         authenticate {
-            route("follow") {
-                post { profileController.follow(this.context) }
-                delete { profileController.unfollow(this.context) }
-            }
+            post("follow") { profileController.follow(this.context) }
+            delete("follow") { profileController.unfollow(this.context) }
         }
     }
 }
 
 fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
-    route("articles") {
+    route("api/articles") {
+        authenticate(optional = true) {
+            get { articleController.findBy(this.context) }
+        }
         authenticate {
             get("feed") { articleController.feed(this.context) }
-            route("{slug}") {
-                route("comments") {
-                    post { commentController.add(this.context) }
-                    authenticate(optional = true) {
-                        get { commentController.findBySlug(this.context) }
-                    }
-                    delete("{id}") { commentController.delete(this.context) }
-                }
-                route("favorite") {
-                    post { articleController.favorite(this.context) }
-                    delete { articleController.unfavorite(this.context) }
-                }
+            post { articleController.create(this.context) }
+        }
+        route("{slug}") {
+            authenticate(optional = true) {
                 get { articleController.get(this.context) }
+                get("comments") { commentController.findBySlug(this.context) }
+            }
+            authenticate {
                 put { articleController.update(this.context) }
                 delete { articleController.delete(this.context) }
+                post("favorite") { articleController.favorite(this.context) }
+                delete("favorite") { articleController.unfavorite(this.context) }
+                post("comments") { commentController.add(this.context) }
+                delete("comments/{id}") { commentController.delete(this.context) }
             }
-            authenticate(optional = true) {
-                get { articleController.findBy(this.context) }
-            }
-            post { articleController.create(this.context) }
         }
     }
 }
 
 fun Routing.tags(tagController: TagController) {
-    route("tags") {
+    route("api/tags") {
         authenticate(optional = true) {
             get { tagController.get(this.context) }
         }
