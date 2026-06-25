@@ -123,6 +123,18 @@ class ArticleRepository {
         }
     }
 
+    fun findPopular(currentUserId: Long?, limit: Int, offset: Int): List<Article> {
+        return transaction {
+            Articles.selectAll().toList()
+                .sortedByDescending { row ->
+                    Favorites.select { Favorites.articleId eq row[Articles.id] }.count()
+                }
+                .drop(offset)
+                .take(limit)
+                .map { toArticle(it, currentUserId) }
+        }
+    }
+
     fun findFeed(currentUserId: Long?, limit: Int, offset: Int): List<Article> {
         if (currentUserId == null) return listOf()
         return transaction {

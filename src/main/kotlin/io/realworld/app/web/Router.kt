@@ -42,6 +42,7 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
     route("api/articles") {
         authenticate(optional = true) {
             get { articleController.findBy(this.context) }
+            get("feed/popular") { articleController.popular(this.context) }
         }
         authenticate {
             get("feed") { articleController.feed(this.context) }

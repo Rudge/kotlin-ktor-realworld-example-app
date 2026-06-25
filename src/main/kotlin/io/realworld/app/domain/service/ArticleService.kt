@@ -11,6 +11,9 @@ class ArticleService(
     fun findBy(tag: String?, author: String?, favorited: String?, currentUserId: Long?, limit: Int, offset: Int): List<Article> =
         articleRepository.findBy(tag, author, favorited, currentUserId, limit, offset)
 
+    fun findPopular(currentUserId: Long?, limit: Int, offset: Int): List<Article> =
+        articleRepository.findPopular(currentUserId, limit, offset)
+
     fun findFeed(currentUserId: Long?, limit: Int, offset: Int): List<Article> =
         articleRepository.findFeed(currentUserId, limit, offset)
 

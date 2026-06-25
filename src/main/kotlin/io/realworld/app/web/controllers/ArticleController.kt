@@ -24,6 +24,14 @@ class ArticleController(private val articleService: ArticleService) {
         ctx.respond(ArticlesDTO(articles, articles.size))
     }
 
+    suspend fun popular(ctx: ApplicationCall) {
+        val limit = ctx.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        val offset = ctx.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+        val currentUser = ctx.authentication.principal<User>()
+        val articles = articleService.findPopular(currentUser?.id, limit, offset)
+        ctx.respond(ArticlesDTO(articles, articles.size))
+    }
+
     suspend fun feed(ctx: ApplicationCall) {
         val limit = ctx.request.queryParameters["limit"]?.toIntOrNull() ?: 20
         val offset = ctx.request.queryParameters["offset"]?.toIntOrNull() ?: 0
