@@ -1,0 +1,856 @@
+openapi: 3.0.3
+info:
+  title: RealWorld Kotlin/Ktor API
+  description: >
+    Kotlin + Ktor implementation of the RealWorld (Conduit) blogging API.
+    Authentication uses a custom JWT scheme — include the token as
+    `Authorization: Token <jwt>` on all authenticated requests.
+    `GET /api/articles/feed/popular` is the new endpoint added on the
+    `feature/article-favorites-count` branch.
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "Value format: `Token <jwt>` (not `Bearer <jwt>`)"
+
+  schemas:
+
+    # ── Users ────────────────────────────────────────────────────────────────
+
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+          description: JWT (only present in login / register responses)
+        username:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+
+    UserDTO:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email, password, username]
+          properties:
+            email:
+              type: string
+              format: email
+            password:
+              type: string
+            username:
+              type: string
+
+    LoginRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email, password]
+          properties:
+            email:
+              type: string
+              format: email
+            password:
+              type: string
+
+    UpdateUserRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email]
+          properties:
+            email:
+              type: string
+              format: email
+            username:
+              type: string
+            password:
+              type: string
+            bio:
+              type: string
+            image:
+              type: string
+
+    # ── Profiles ─────────────────────────────────────────────────────────────
+
+    Profile:
+      type: object
+      properties:
+        username:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        following:
+          type: boolean
+          default: false
+
+    ProfileDTO:
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          $ref: '#/components/schemas/Profile'
+
+    # ── Articles ──────────────────────────────────────────────────────────────
+
+    Article:
+      type: object
+      properties:
+        slug:
+          type: string
+          nullable: true
+          example: how-to-train-your-dragon
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        body:
+          type: string
+        tagList:
+          type: array
+          items:
+            type: string
+          default: []
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        favorited:
+          type: boolean
+          default: false
+        favoritesCount:
+          type: integer
+          format: int64
+          default: 0
+        author:
+          allOf:
+            - $ref: '#/components/schemas/Profile'
+          nullable: true
+
+    ArticleDTO:
+      type: object
+      required: [article]
+      properties:
+        article:
+          $ref: '#/components/schemas/Article'
+
+    ArticlesDTO:
+      type: object
+      required: [articles, articlesCount]
+      properties:
+        articles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+        articlesCount:
+          type: integer
+          description: Number of articles returned in this response (not total in DB)
+
+    CreateArticleRequest:
+      type: object
+      required: [article]
+      properties:
+        article:
+          type: object
+          required: [title, description, body]
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            body:
+              type: string
+            tagList:
+              type: array
+              items:
+                type: string
+
+    UpdateArticleRequest:
+      type: object
+      required: [article]
+      properties:
+        article:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            body:
+              type: string
+            tagList:
+              type: array
+              items:
+                type: string
+
+    # ── Comments ──────────────────────────────────────────────────────────────
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        body:
+          type: string
+        author:
+          allOf:
+            - $ref: '#/components/schemas/Profile'
+          nullable: true
+
+    CommentDTO:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          $ref: '#/components/schemas/Comment'
+
+    CommentsDTO:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    CreateCommentRequest:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: object
+          required: [body]
+          properties:
+            body:
+              type: string
+
+    # ── Tags ──────────────────────────────────────────────────────────────────
+
+    TagDTO:
+      type: object
+      required: [tags]
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+
+    # ── Errors ────────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          properties:
+            body:
+              type: array
+              items:
+                type: string
+          example:
+            body: ["can't be blank"]
+
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
+paths:
+
+  # Users ──────────────────────────────────────────────────────────────────────
+
+  /api/users:
+    post:
+      tags: [Users]
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              user:
+                email: john@example.com
+                password: secret
+                username: johndoe
+      responses:
+        '200':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/login:
+    post:
+      tags: [Users]
+      summary: Log in and receive a JWT token
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              user:
+                email: john@example.com
+                password: secret
+      responses:
+        '200':
+          description: Login successful — token in response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '422':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/user:
+    get:
+      tags: [Users]
+      summary: Get the currently authenticated user
+      operationId: getCurrentUser
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '401':
+          description: Unauthorized
+    put:
+      tags: [Users]
+      summary: Update the currently authenticated user
+      operationId: updateUser
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Profiles ───────────────────────────────────────────────────────────────────
+
+  /api/profiles/{username}:
+    get:
+      tags: [Profiles]
+      summary: Get a user profile
+      operationId: getProfile
+      security:
+        - {}
+        - TokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile (following=true only when authenticated and following)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDTO'
+        '404':
+          description: Profile not found
+
+  /api/profiles/{username}/follow:
+    post:
+      tags: [Profiles]
+      summary: Follow a user
+      operationId: followUser
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Now following — returns updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDTO'
+        '401':
+          description: Unauthorized
+    delete:
+      tags: [Profiles]
+      summary: Unfollow a user
+      operationId: unfollowUser
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unfollowed — returns updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDTO'
+        '401':
+          description: Unauthorized
+
+  # Articles ───────────────────────────────────────────────────────────────────
+
+  /api/articles:
+    get:
+      tags: [Articles]
+      summary: List articles — filterable by tag, author, or favorited username
+      operationId: listArticles
+      security:
+        - {}
+        - TokenAuth: []
+      parameters:
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Filter by tag name
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: Filter by author username
+        - name: favorited
+          in: query
+          schema:
+            type: string
+          description: Filter by username of user who favorited the articles
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated article list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlesDTO'
+    post:
+      tags: [Articles]
+      summary: Create an article
+      operationId: createArticle
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArticleRequest'
+            example:
+              article:
+                title: How to train your dragon
+                description: Ever wonder how?
+                body: Very carefully.
+                tagList: [dragons, training]
+      responses:
+        '200':
+          description: Article created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDTO'
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/articles/feed:
+    get:
+      tags: [Articles]
+      summary: Get articles from users you follow (authentication required)
+      operationId: getFeed
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Feed articles from followed users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlesDTO'
+        '401':
+          description: Unauthorized
+
+  /api/articles/feed/popular:
+    get:
+      tags: [Articles]
+      summary: Get articles sorted by favorites count descending  ★ NEW
+      description: >
+        Returns all articles ordered by number of favorites, most favorited first.
+        Authentication is optional — when a valid token is supplied, the `favorited`
+        field on each article reflects whether the current user has favorited it.
+        `articlesCount` equals the number of articles returned in this page (not
+        the total count in the database).
+      operationId: getPopularArticles
+      security:
+        - {}
+        - TokenAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of articles to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of articles to skip
+      responses:
+        '200':
+          description: Articles sorted by favorites count (descending)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlesDTO'
+              example:
+                articles:
+                  - slug: most-loved-post
+                    title: Most Loved Post
+                    description: Everyone favorited this
+                    body: Content here.
+                    tagList: [popular]
+                    createdAt: "2024-01-01T00:00:00Z"
+                    updatedAt: "2024-01-01T00:00:00Z"
+                    favorited: false
+                    favoritesCount: 42
+                    author:
+                      username: johndoe
+                      bio: null
+                      image: null
+                      following: false
+                articlesCount: 1
+
+  /api/articles/{slug}:
+    get:
+      tags: [Articles]
+      summary: Get a single article by slug
+      operationId: getArticle
+      security:
+        - {}
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDTO'
+        '404':
+          description: Article not found
+    put:
+      tags: [Articles]
+      summary: Update an article
+      operationId: updateArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArticleRequest'
+      responses:
+        '200':
+          description: Updated article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDTO'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Article not found
+    delete:
+      tags: [Articles]
+      summary: Delete an article
+      operationId: deleteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article deleted
+        '401':
+          description: Unauthorized
+
+  /api/articles/{slug}/favorite:
+    post:
+      tags: [Articles]
+      summary: Favorite an article
+      operationId: favoriteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article with updated favorite state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDTO'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Article not found
+    delete:
+      tags: [Articles]
+      summary: Unfavorite an article
+      operationId: unfavoriteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article with updated favorite state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDTO'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Article not found
+
+  # Comments ───────────────────────────────────────────────────────────────────
+
+  /api/articles/{slug}/comments:
+    get:
+      tags: [Comments]
+      summary: Get comments for an article
+      operationId: getComments
+      security:
+        - {}
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentsDTO'
+    post:
+      tags: [Comments]
+      summary: Add a comment to an article
+      operationId: addComment
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+            example:
+              comment:
+                body: Great article!
+      responses:
+        '200':
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentDTO'
+        '401':
+          description: Unauthorized
+
+  /api/articles/{slug}/comments/{id}:
+    delete:
+      tags: [Comments]
+      summary: Delete a comment
+      operationId: deleteComment
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Comment deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: Comment not found
+
+  # Tags ───────────────────────────────────────────────────────────────────────
+
+  /api/tags:
+    get:
+      tags: [Tags]
+      summary: Get all tags that have been used on articles
+      operationId: getTags
+      security:
+        - {}
+        - TokenAuth: []
+      responses:
+        '200':
+          description: Tag list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagDTO'
+              example:
+                tags: [dragons, training, popular]
