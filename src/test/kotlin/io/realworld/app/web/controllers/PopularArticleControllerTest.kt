@@ -1,5 +1,6 @@
 package io.realworld.app.web.controllers
 
+import com.mashape.unirest.http.Unirest
 import io.realworld.app.domain.Article
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.ArticlesDTO
@@ -65,6 +66,20 @@ class PopularArticleControllerTest {
         assertEquals(HttpStatus.SC_OK, response.status)
         assertNotNull(response.body.articles)
         assertEquals(response.body.articles.size, response.body.articlesCount)
+    }
+
+    @Test
+    fun `get popular articles with malformed token returns 401 not 500`() {
+        // Ktor 1.x rejects a malformed JWT with 401 even when auth is optional —
+        // providing a token signals intent to authenticate, so an invalid one is rejected.
+        // This ensures bad credentials never cause a server error (5xx).
+        val response = Unirest
+            .get("http://localhost:${appRule.port}/api/articles/feed/popular")
+            .header("Accept", "application/json")
+            .header("Authorization", "Token invalid.jwt.token")
+            .asString()
+
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, response.status)
     }
 
     @Test

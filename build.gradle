@@ -51,3 +51,14 @@ dependencies {
     testImplementation "junit:junit:$junit_version"
     testImplementation "com.mashape.unirest:unirest-java:$unirest_version"
 }
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTotal: ${result.testCount} tests — ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped"
+        }
+    }
+}
