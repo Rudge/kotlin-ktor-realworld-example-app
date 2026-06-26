@@ -8,8 +8,8 @@ buildscript {
         ktor_version = "1.2.3"
         kodein_version = "6.1.0"
         hikaricp_version = "5.1.0"
-        h2_version = "2.2.224"
-        exposed_version = "0.14.1"
+        h2_version = "1.4.200"
+        exposed_version = "0.30.2"
         junit_version = "4.13.2"
         unirest_version = "1.4.9"
     }
@@ -44,8 +44,21 @@ dependencies {
     implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
     api "com.zaxxer:HikariCP:$hikaricp_version"
     api "com.h2database:h2:$h2_version"
-    api "org.jetbrains.exposed:exposed:$exposed_version"
+    api "org.jetbrains.exposed:exposed-core:$exposed_version"
+    api "org.jetbrains.exposed:exposed-dao:$exposed_version"
+    api "org.jetbrains.exposed:exposed-jdbc:$exposed_version"
 
-    testCompile "junit:junit:$junit_version"
-    testCompile "com.mashape.unirest:unirest-java:$unirest_version"
+    testImplementation "junit:junit:$junit_version"
+    testImplementation "com.mashape.unirest:unirest-java:$unirest_version"
+}
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTotal: ${result.testCount} tests — ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped"
+        }
+    }
 }

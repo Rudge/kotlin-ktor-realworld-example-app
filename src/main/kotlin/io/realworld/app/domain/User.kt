@@ -8,8 +8,8 @@ data class UserDTO(val user: User? = null) {
         require(
             user != null &&
                 user.email.isEmailValid() &&
-                user.password.isNullOrBlank() &&
-                user.username.isNullOrBlank()
+                !user.password.isNullOrBlank() &&
+                !user.username.isNullOrBlank()
         ) { "User is invalid." }
         return user
     }
@@ -18,20 +18,13 @@ data class UserDTO(val user: User? = null) {
         require(
             user != null &&
                 user.email.isEmailValid() &&
-                user.password.isNullOrBlank()
+                !user.password.isNullOrBlank()
         ) { "Email or password is invalid." }
         return user
     }
 
     fun validToUpdate(): User {
-        require(
-            user != null &&
-                user.email.isEmailValid() &&
-                user.password.isNullOrBlank() &&
-                user.username.isNullOrBlank() &&
-                user.bio.isNullOrBlank() &&
-                user.image.isNullOrBlank()
-        ) { "User is invalid." }
+        require(user != null && user.email.isEmailValid()) { "User is invalid." }
         return user
     }
 }

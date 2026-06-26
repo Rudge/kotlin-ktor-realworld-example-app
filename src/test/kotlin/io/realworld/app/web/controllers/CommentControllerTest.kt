@@ -7,11 +7,9 @@ import io.realworld.app.web.rules.AppRule
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
 class CommentControllerTest {
     @Rule
     @JvmField

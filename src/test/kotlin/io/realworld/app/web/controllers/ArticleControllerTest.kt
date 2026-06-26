@@ -11,11 +11,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
 class ArticleControllerTest {
     @Rule
     @JvmField
@@ -146,7 +144,7 @@ class ArticleControllerTest {
 
         http.post<ProfileDTO>("/api/profiles/user_name_test/follow")
 
-        val response = appRule.http.get<ArticlesDTO>("/api/articles/feed")
+        val response = http.get<ArticlesDTO>("/api/articles/feed")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)

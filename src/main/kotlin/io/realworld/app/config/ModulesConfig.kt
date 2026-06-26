@@ -1,7 +1,11 @@
 package io.realworld.app.config
 
+import io.realworld.app.domain.repository.ArticleRepository
+import io.realworld.app.domain.repository.CommentRepository
 import io.realworld.app.domain.repository.TagRepository
 import io.realworld.app.domain.repository.UserRepository
+import io.realworld.app.domain.service.ArticleService
+import io.realworld.app.domain.service.CommentService
 import io.realworld.app.domain.service.TagService
 import io.realworld.app.domain.service.UserService
 import io.realworld.app.utils.JwtProvider
@@ -22,13 +26,17 @@ object ModulesConfig {
         bind() from singleton { UserRepository() }
     }
     private val articleModule = Kodein.Module("ARTICLE") {
-        bind() from singleton { ArticleController() }
+        bind() from singleton { ArticleController(instance()) }
+        bind() from singleton { ArticleService(instance(), instance()) }
+        bind() from singleton { ArticleRepository() }
     }
     private val profileModule = Kodein.Module("PROFILE") {
-        bind() from singleton { ProfileController() }
+        bind() from singleton { ProfileController(instance()) }
     }
     private val commentModule = Kodein.Module("COMMENT") {
-        bind() from singleton { CommentController() }
+        bind() from singleton { CommentController(instance()) }
+        bind() from singleton { CommentService(instance(), instance()) }
+        bind() from singleton { CommentRepository() }
     }
     private val tagModule = Kodein.Module("TAG") {
         bind() from singleton { TagController(instance()) }
