@@ -1,5 +1,6 @@
 package io.realworld.app.web.util
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.mashape.unirest.http.HttpResponse
 import com.mashape.unirest.http.ObjectMapper
@@ -16,7 +17,11 @@ class HttpUtil(port: Int) {
     init {
         Unirest.setObjectMapper(object : ObjectMapper {
             override fun <T> readValue(value: String, valueType: Class<T>): T {
-                return jacksonObjectMapper().readValue(value, valueType)
+                // Article JSON includes extra fields (e.g. author.profile) not on our DTOs.
+                // Without this, Jackson fails deserialization in tests even when we only assert status/body.
+                return jacksonObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .readValue(value, valueType)
             }
 
             override fun writeValue(value: Any): String {
@@ -36,6 +41,10 @@ class HttpUtil(port: Int) {
 
     inline fun <reified T> get(path: String, params: Map<String, Any>? = null) =
         Unirest.get(origin + path).headers(headers).queryString(params).asObject(T::class.java)
+
+    /** GET without JSON parsing — used to assert 401/422 status and raw error body text. */
+    fun getRaw(path: String, params: Map<String, Any>? = null) =
+        Unirest.get(origin + path).headers(headers).queryString(params).asString()
 
     inline fun <reified T> put(path: String, body: Any) =
         Unirest.put(origin + path).headers(headers).body(body).asObject(T::class.java)

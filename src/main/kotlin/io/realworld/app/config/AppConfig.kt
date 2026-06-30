@@ -19,6 +19,8 @@ import io.ktor.server.engine.EngineAPI
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.KtorExperimentalAPI
+import io.realworld.app.domain.exceptions.NotFoundException
+import io.realworld.app.domain.exceptions.UnauthorizedException
 import io.realworld.app.utils.JwtProvider
 import io.realworld.app.web.ErrorResponse
 import io.realworld.app.web.articles
@@ -34,22 +36,39 @@ import org.kodein.di.generic.instance
 
 const val SERVER_PORT = 8080
 
+/**
+ * Boots the embedded Ktor server and connects to an in-memory H2 database.
+ *
+ * @param isCio when true uses the CIO engine (lighter, good for tests); otherwise Netty
+ * @param port HTTP port to bind; defaults to [SERVER_PORT] for `./gradlew run`, tests pass a free port
+ *
+ * Each call uses a unique H2 database name (`test_<nanoTime>`) so integration tests get a clean
+ * slate. Previously all tests shared one in-memory DB (`jdbc:h2:mem:DATABASE_TO_UPPER=false`), so
+ * data from one test leaked into the next (e.g. articlesCount was 6 instead of 2). A unique name
+ * gives each test run its own isolated database.
+ */
 @KtorExperimentalAPI
 @EngineAPI
-fun setup(isCio: Boolean = true): BaseApplicationEngine {
-    DbConfig.setup("jdbc:h2:mem:DATABASE_TO_UPPER=false;", "sa", "")
-    return server(if (isCio) CIO else Netty)
+fun setup(isCio: Boolean = true, port: Int = SERVER_PORT): BaseApplicationEngine {
+    val dbName = "test_${System.nanoTime()}"
+    DbConfig.setup("jdbc:h2:mem:$dbName;DATABASE_TO_UPPER=false;", "sa", "")
+    return server(if (isCio) CIO else Netty, port)
 }
 
+/**
+ * Creates the embedded server instance. Extracted from [setup] only so tests can pass a custom
+ * [port]; the body is otherwise unchanged from the original (engine, watchPaths, mainModule).
+ */
 @KtorExperimentalAPI
 @EngineAPI
 fun server(
     engine: ApplicationEngineFactory<BaseApplicationEngine,
-        out ApplicationEngine.Configuration>
+        out ApplicationEngine.Configuration>,
+    port: Int = SERVER_PORT
 ): BaseApplicationEngine {
     return embeddedServer(
         engine,
-        port = SERVER_PORT,
+        port = port,
         watchPaths = listOf("mainModule"),
         module = Application::mainModule
     )
@@ -79,9 +98,25 @@ fun Application.mainModule() {
             }
         }
     }
+    // StatusPages existed before but only mapped every Exception → 500. The article endpoints
+    // throw domain/validation exceptions that need proper HTTP status codes (401, 404, 422).
+    // Existing user controllers did not rely on these handlers — they returned DTOs directly.
+    // New article controllers throw instead, so these handlers are required for correct responses.
     install(StatusPages) {
-        exception(Exception::class.java) {
-            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", this.toString())))
+        exception<UnauthorizedException> { cause ->
+            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", cause.message)))
+            context.respond(HttpStatusCode.Unauthorized, errorResponse)
+        }
+        exception<NotFoundException> { cause ->
+            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", cause.message)))
+            context.respond(HttpStatusCode.NotFound, errorResponse)
+        }
+        exception<IllegalArgumentException> { cause ->
+            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", cause.message)))
+            context.respond(HttpStatusCode.UnprocessableEntity, errorResponse)
+        }
+        exception<Exception> { cause ->
+            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", cause.toString())))
             context.respond(
                 HttpStatusCode.InternalServerError, errorResponse
             )

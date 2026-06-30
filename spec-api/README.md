@@ -2,10 +2,12 @@
 
 ## Running API tests locally
 
-To locally run the provided Postman collection against your backend, execute:
+`APIURL` is required. Run `./run-api-tests.sh --help` for usage and examples.
+
+Against this backend (no `/api` prefix, port 8080):
 
 ```
-APIURL=http://localhost:3000/api ./run-api-tests.sh
+APIURL=http://localhost:8080 ./run-api-tests.sh
 ```
 
 For more details, see [`run-api-tests.sh`](run-api-tests.sh).

@@ -1,35 +1,51 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+# Build and test on every push/PR to master.
+# Matrix: JDK 17 and 21. Gradle deps cached via gradle-build-action.
+# JUnit XML published as GitHub check annotations via dorny/test-reporter.
 
 name: CI with Gradle
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
   pull_request:
-    branches: [ "master" ]
+    branches: [master]
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [17, 21]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '16'
-        distribution: temurin
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-    
-    - name: Execute Gradle build
-      run: ./gradlew build
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Build
+        run: ./gradlew build --no-daemon
+
+      - name: Test
+        run: ./gradlew test --no-daemon
+
+      - name: Publish JUnit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: JUnit Tests (JDK ${{ matrix.java-version }})
+          path: build/test-results/test/*.xml
+          reporter: java-junit
+          fail-on-error: true

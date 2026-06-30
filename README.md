@@ -65,9 +65,7 @@ Start the server:
 
 In the project have the [spec-api](https://github.com/Rudge/kotlin-ktor-realworld-example-app/tree/master/spec-api) with the README and collections to execute backend tests specs [realworld](https://github.com/gothinkster/realworld).
 
-Execute tests and start the server:
-
-> ./gradlew run & APIURL=http://localhost:8080 ./spec-api/run-api-tests.sh
+For CI workflow details and how to run spec-api tests locally, see [testing.md](testing.md).
 
 # Help
 
