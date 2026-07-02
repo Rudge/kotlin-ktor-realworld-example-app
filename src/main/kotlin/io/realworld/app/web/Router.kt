@@ -43,6 +43,11 @@ fun Routing.profiles(profileController: ProfileController) {
 fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
     route("articles") {
         authenticate {
+            // Mounted PREFIX-LESS as `/articles/feed/popular` to follow this router's
+            // existing convention (all working User/Tag routes omit `/api`). The RealWorld
+            // spec and project docs write it as `/api/articles/feed/popular`; the prefix
+            // divergence is intentional and noted in the PR description / research D1.
+            get("feed/popular") { articleController.popularFeed(this.context) }
             get("feed") { articleController.feed(this.context) }
             route("{slug}") {
                 route("comments") {

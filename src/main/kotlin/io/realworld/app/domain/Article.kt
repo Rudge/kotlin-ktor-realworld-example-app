@@ -2,7 +2,17 @@ package io.realworld.app.domain
 
 import java.util.*
 
-data class ArticleDTO(val article: Article?)
+data class ArticleDTO(val article: Article?) {
+    fun validCreate(): Article {
+        require(
+            article != null &&
+                !article.title.isNullOrBlank() &&
+                !article.description.isNullOrBlank() &&
+                article.body.isNotBlank()
+        ) { "Article is invalid." }
+        return article
+    }
+}
 
 data class ArticlesDTO(val articles: List<Article>, val articlesCount: Int)
 
@@ -15,4 +25,4 @@ data class Article(val slug: String? = null,
                    val updatedAt: Date? = null,
                    val favorited: Boolean = false,
                    val favoritesCount: Long = 0,
-                   val author: User? = null)
+                   val author: Profile? = null)

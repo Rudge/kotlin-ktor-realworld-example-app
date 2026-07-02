@@ -8,3 +8,9 @@ const val MAIL_REGEX = ("^(([\\w-]+\\.)+[\\w-]+|([a-zA-Z]|[\\w-]{2,}))@"
     + "([a-zA-Z]+[\\w-]+\\.)+[a-zA-Z]{2,4})$")
 
 fun String.isEmailValid(): Boolean = !this.isNullOrBlank() && Regex(MAIL_REGEX).matches(this)
+
+fun String.toSlug(): String = trim().lowercase()
+    .replace(Regex("[^a-z0-9\\s-]"), "")
+    .replace(Regex("\\s+"), "-")
+    .replace(Regex("-+"), "-")
+    .trim('-')

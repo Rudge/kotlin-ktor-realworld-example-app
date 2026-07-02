@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: RealWorld API — Popular Articles Feed
+  version: 1.0.0
+  description: >
+    Contract for the popular articles feed and its supporting article/favorite
+    operations. Paths reflect the live router (no `/api` prefix), consistent with the
+    implemented User/Tag routes. Authentication uses the JWT scheme `Token` (header
+    `Authorization: Token <jwt>`), as configured in AppConfig.
+servers:
+  - url: http://localhost:8080
+security:
+  - Token: []
+paths:
+  /articles/feed/popular:
+    get:
+      summary: Popular articles feed (ranked by favorites)
+      description: >
+        Returns articles ordered by favorite count descending, tie-broken by most
+        recently created. Requires authentication. Supports limit/offset pagination.
+      security:
+        - Token: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 20, minimum: 0 }
+          description: Max articles to return. Non-numeric/missing yields default 20.
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0, minimum: 0 }
+          description: Leading articles to skip. Non-numeric/missing yields default 0.
+      responses:
+        "200":
+          description: >
+            Ranked window of articles plus the total count of all articles. Empty list
+            with count 0 when no articles exist or the window is beyond the results.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MultipleArticles" }
+        "401":
+          description: Missing or invalid authentication token.
+  /articles:
+    post:
+      summary: Create an article (supporting operation)
+      security:
+        - Token: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewArticleRequest" }
+      responses:
+        "200":
+          description: The created article.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SingleArticle" }
+        "401":
+          description: Missing or invalid authentication token.
+        "422":
+          description: Validation failed — a required field (title, description, or body) is missing or blank.
+  /articles/{slug}/favorite:
+    post:
+      summary: Favorite an article (supporting operation)
+      security:
+        - Token: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The article with the requesting user's favorite recorded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SingleArticle" }
+        "401": { description: Missing or invalid authentication token. }
+        "404": { description: Article not found for the given slug. }
+    delete:
+      summary: Unfavorite an article (supporting operation)
+      security:
+        - Token: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The article with the requesting user's favorite removed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SingleArticle" }
+        "401": { description: Missing or invalid authentication token. }
+        "404": { description: Article not found for the given slug. }
+components:
+  securitySchemes:
+    Token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Ktor auth scheme name is `Token`: header `Authorization: Token <jwt>`."
+  schemas:
+    MultipleArticles:
+      type: object
+      required: [articles, articlesCount]
+      properties:
+        articles:
+          type: array
+          items: { $ref: "#/components/schemas/Article" }
+        articlesCount:
+          type: integer
+          description: Total number of matching articles across all pages (not page size).
+    SingleArticle:
+      type: object
+      required: [article]
+      properties:
+        article: { $ref: "#/components/schemas/Article" }
+    NewArticleRequest:
+      type: object
+      required: [article]
+      properties:
+        article:
+          type: object
+          required: [title, description, body]
+          properties:
+            title: { type: string }
+            description: { type: string }
+            body: { type: string }
+            tagList:
+              type: array
+              items: { type: string }
+              default: []
+    Article:
+      type: object
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        body: { type: string }
+        tagList:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        favorited:
+          type: boolean
+          description: Whether the requesting user has favorited this article.
+        favoritesCount:
+          type: integer
+          description: Total number of users who have favorited this article.
+        author: { $ref: "#/components/schemas/Profile" }
+    Profile:
+      type: object
+      properties:
+        username: { type: string }
+        bio: { type: string, nullable: true }
+        image: { type: string, nullable: true }
+        following:
+          type: boolean
+          description: Whether the requesting user follows this author.

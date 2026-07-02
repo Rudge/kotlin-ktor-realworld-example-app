@@ -9,6 +9,7 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
+import com.fasterxml.jackson.databind.SerializationFeature
 import io.ktor.response.respond
 import io.ktor.routing.Routing
 import io.ktor.server.cio.CIO
@@ -19,8 +20,14 @@ import io.ktor.server.engine.EngineAPI
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.KtorExperimentalAPI
+import io.realworld.app.domain.repository.ArticleFavorites
+import io.realworld.app.domain.repository.ArticleTags
+import io.realworld.app.domain.repository.Articles
+import io.realworld.app.domain.repository.Follows
+import io.realworld.app.domain.repository.Tags
+import io.realworld.app.domain.repository.Users
 import io.realworld.app.utils.JwtProvider
-import io.realworld.app.web.ErrorResponse
+import io.realworld.app.web.errorExceptionMapping
 import io.realworld.app.web.articles
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
@@ -30,6 +37,8 @@ import io.realworld.app.web.controllers.UserController
 import io.realworld.app.web.profiles
 import io.realworld.app.web.tags
 import io.realworld.app.web.users
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kodein.di.generic.instance
 
 const val SERVER_PORT = 8080
@@ -37,7 +46,11 @@ const val SERVER_PORT = 8080
 @KtorExperimentalAPI
 @EngineAPI
 fun setup(isCio: Boolean = true): BaseApplicationEngine {
-    DbConfig.setup("jdbc:h2:mem:DATABASE_TO_UPPER=false;", "sa", "")
+    val dbName = "db_${java.util.UUID.randomUUID().toString().replace("-", "")}"
+    DbConfig.setup("jdbc:h2:mem:$dbName;DATABASE_TO_UPPER=false;", "sa", "")
+    transaction {
+        SchemaUtils.create(Users, Follows, Articles, ArticleFavorites, ArticleTags, Tags)
+    }
     return server(if (isCio) CIO else Netty)
 }
 
@@ -66,6 +79,7 @@ fun Application.mainModule() {
     install(CallLogging)
     install(ContentNegotiation) {
         jackson {
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         }
     }
     install(Authentication) {
@@ -80,12 +94,7 @@ fun Application.mainModule() {
         }
     }
     install(StatusPages) {
-        exception(Exception::class.java) {
-            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", this.toString())))
-            context.respond(
-                HttpStatusCode.InternalServerError, errorResponse
-            )
-        }
+        errorExceptionMapping()
     }
 
     install(Routing) {

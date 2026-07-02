@@ -2,7 +2,6 @@ package io.realworld.app.domain.repository
 
 import io.realworld.app.domain.User
 import io.realworld.app.domain.exceptions.NotFoundException
-import org.jetbrains.exposed.dao.LongIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
@@ -11,21 +10,22 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-internal object Users : LongIdTable() {
+internal object Users : Table() {
+    val id: Column<Long> = long("id").autoIncrement()
     val email: Column<String> = varchar("email", 200).uniqueIndex()
     val username: Column<String> = varchar("username", 100).uniqueIndex()
     val password: Column<String> = varchar("password", 150)
     val bio: Column<String?> = varchar("bio", 1000).nullable()
     val image: Column<String?> = varchar("image", 255).nullable()
+    override val primaryKey = PrimaryKey(id)
 
     fun toDomain(row: ResultRow): User {
         return User(
-            id = row[Users.id].value,
+            id = row[id],
             email = row[email],
             username = row[username],
             password = row[password],
@@ -36,8 +36,9 @@ internal object Users : LongIdTable() {
 }
 
 internal object Follows : Table() {
-    val user: Column<Long> = long("user").primaryKey()
-    val follower: Column<Long> = long("user_follower").primaryKey()
+    val user: Column<Long> = long("user")
+    val follower: Column<Long> = long("user_follower")
+    override val primaryKey = PrimaryKey(user, follower)
 }
 
 class UserRepository {
@@ -66,13 +67,13 @@ class UserRepository {
 
     fun create(user: User): Long? {
         return transaction {
-            Users.insertAndGetId { row ->
+            Users.insert { row ->
                 row[email] = user.email
                 row[username] = user.username!!
                 row[password] = user.password!!
                 row[bio] = user.bio
                 row[image] = user.image
-            }.value
+            }[Users.id]
         }
     }
 
@@ -128,7 +129,9 @@ class UserRepository {
             ?: throw NotFoundException("Username not found to unfollow")
         transaction {
             Follows.deleteWhere {
-                Follows.user eq user.id!! and (Follows.follower eq userToUnfollow.id!!)
+                with(it) {
+                    (Follows.user eq user.id!!) and (Follows.follower eq userToUnfollow.id!!)
+                }
             }
         }
         return userToUnfollow

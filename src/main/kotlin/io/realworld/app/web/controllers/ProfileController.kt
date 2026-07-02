@@ -1,24 +1,35 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.auth.authentication
+import io.ktor.response.respond
+import io.realworld.app.domain.ProfileDTO
+import io.realworld.app.domain.User
+import io.realworld.app.domain.service.UserService
 
-class ProfileController {
-    //class ProfileController(private val userService: UserService) {
-    fun get(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.getProfileByUsername(ctx.attribute("email")!!, usernameFollowing).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+class ProfileController(private val userService: UserService) {
+    suspend fun get(ctx: ApplicationCall) {
+        val username = ctx.parameters["username"]
+            ?: throw IllegalArgumentException("Username is required.")
+        val email = ctx.authentication.principal<User>()?.email ?: ""
+        ctx.respond(ProfileDTO(userService.getProfileByUsername(email, username)))
     }
 
-    fun follow(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.follow(ctx.attribute("email")!!, usernameToFollow).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+    suspend fun follow(ctx: ApplicationCall) {
+        val username = ctx.parameters["username"]
+            ?: throw IllegalArgumentException("Username is required.")
+        val email = requireEmail(ctx)
+        ctx.respond(ProfileDTO(userService.follow(email, username)))
     }
 
-    fun unfollow(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.unfollow(ctx.attribute("email")!!, usernameToUnfollow).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+    suspend fun unfollow(ctx: ApplicationCall) {
+        val username = ctx.parameters["username"]
+            ?: throw IllegalArgumentException("Username is required.")
+        val email = requireEmail(ctx)
+        ctx.respond(ProfileDTO(userService.unfollow(email, username)))
     }
+
+    private fun requireEmail(ctx: ApplicationCall): String =
+        ctx.authentication.principal<User>()?.email
+            ?: throw IllegalArgumentException("User not logged or with invalid email.")
 }
