@@ -1,12 +1,22 @@
 package io.realworld.app.web.controllers
 
-import io.ktor.application.ApplicationCall
-import io.ktor.request.receive
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.principal
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.ArticlesDTO
+import io.realworld.app.domain.User
+import io.realworld.app.domain.service.ArticleService
 
-class ArticleController {
-//class ArticleController(private val articleService: ArticleService) {
+class ArticleController(private val articleService: ArticleService) {
+
+    suspend fun popular(ctx: ApplicationCall) {
+        val limit = ctx.parameters["limit"]?.toIntOrNull()
+        val offset = ctx.parameters["offset"]?.toIntOrNull()
+        val currentUserId = ctx.principal<User>()?.id
+        ctx.respond(articleService.findPopular(limit, offset, currentUserId))
+    }
 
     fun findBy(ctx: ApplicationCall): ArticlesDTO {
         val tag = ctx.parameters["tag"]

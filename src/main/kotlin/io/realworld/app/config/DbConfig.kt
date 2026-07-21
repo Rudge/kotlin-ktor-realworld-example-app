@@ -6,8 +6,8 @@ import org.h2.tools.Server
 import org.jetbrains.exposed.sql.Database
 
 object DbConfig {
-    fun setup(jdbcUrl: String, username: String, password: String) {
-        Server.createPgServer().start()
+    fun setup(jdbcUrl: String, username: String, password: String, startPgServer: Boolean = false) {
+        if (startPgServer) Server.createPgServer().start()
         val config = HikariConfig().also { config ->
             config.jdbcUrl = jdbcUrl
             config.username = username

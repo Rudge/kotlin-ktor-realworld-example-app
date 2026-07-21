@@ -1,7 +1,7 @@
 package io.realworld.app.web.controllers
 
-import io.ktor.application.ApplicationCall
-import io.ktor.response.respond
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.response.respond
 import io.realworld.app.domain.service.TagService
 
 class TagController(private val tagService: TagService) {

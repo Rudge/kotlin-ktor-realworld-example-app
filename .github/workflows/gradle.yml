@@ -9,27 +9,88 @@ name: CI with Gradle
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ '17', '21' ]
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK
-      uses: actions/setup-java@v3
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
       with:
-        java-version: '16'
+        java-version: ${{ matrix.java-version }}
         distribution: temurin
+
+    # Caches ~/.gradle/caches and ~/.gradle/wrapper between runs, keyed on the
+    # wrapper version and **/*.gradle* / **/gradle-wrapper.properties contents.
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-    
+      uses: gradle/actions/setup-gradle@v4
+
     - name: Execute Gradle build
       run: ./gradlew build
+
+    - name: Execute Gradle test
+      run: ./gradlew test
+
+    - name: Publish JUnit test report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: JUnit Tests (JDK ${{ matrix.java-version }})
+        path: '**/build/test-results/test/*.xml'
+        reporter: java-junit
+
+  spec-api-tests:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: temurin
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Start server in background
+      run: nohup ./gradlew run > server.log 2>&1 &
+
+    - name: Wait for server to become ready
+      run: |
+        for i in $(seq 1 30); do
+          if curl -sf http://localhost:8080/api/tags > /dev/null; then
+            echo "Server is up"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "Server did not become ready in time"
+        cat server.log
+        exit 1
+
+    - name: Run RealWorld API spec tests
+      env:
+        APIURL: http://localhost:8080/api
+      run: bash ./spec-api/run-api-tests.sh
+
+    - name: Print server logs
+      if: always()
+      run: cat server.log

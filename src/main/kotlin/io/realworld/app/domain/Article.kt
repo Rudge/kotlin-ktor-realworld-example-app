@@ -15,4 +15,4 @@ data class Article(val slug: String? = null,
                    val updatedAt: Date? = null,
                    val favorited: Boolean = false,
                    val favoritesCount: Long = 0,
-                   val author: User? = null)
+                   val author: Profile? = null)
