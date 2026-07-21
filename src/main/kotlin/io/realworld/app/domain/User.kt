@@ -1,6 +1,5 @@
 package io.realworld.app.domain
 
-import io.ktor.auth.Principal
 import io.realworld.app.ext.isEmailValid
 
 data class UserDTO(val user: User? = null) {
@@ -8,8 +7,8 @@ data class UserDTO(val user: User? = null) {
         require(
             user != null &&
                 user.email.isEmailValid() &&
-                user.password.isNullOrBlank() &&
-                user.username.isNullOrBlank()
+                !user.password.isNullOrBlank() &&
+                !user.username.isNullOrBlank()
         ) { "User is invalid." }
         return user
     }
@@ -18,19 +17,17 @@ data class UserDTO(val user: User? = null) {
         require(
             user != null &&
                 user.email.isEmailValid() &&
-                user.password.isNullOrBlank()
+                !user.password.isNullOrBlank()
         ) { "Email or password is invalid." }
         return user
     }
 
+    // Update is a partial operation in the RealWorld spec: username/password/bio/image
+    // are all optional, so only the email is validated here.
     fun validToUpdate(): User {
         require(
             user != null &&
-                user.email.isEmailValid() &&
-                user.password.isNullOrBlank() &&
-                user.username.isNullOrBlank() &&
-                user.bio.isNullOrBlank() &&
-                user.image.isNullOrBlank()
+                user.email.isEmailValid()
         ) { "User is invalid." }
         return user
     }
@@ -44,4 +41,4 @@ data class User(
     val password: String? = null,
     val bio: String? = null,
     val image: String? = null
-) : Principal
+)
