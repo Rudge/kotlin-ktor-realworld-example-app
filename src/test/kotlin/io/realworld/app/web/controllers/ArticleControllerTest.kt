@@ -237,4 +237,78 @@ class ArticleControllerTest {
 
         assertEquals(response.status, HttpStatus.SC_OK)
     }
+
+    @Test
+    fun `get popular feed returns articles sorted by favorites`() {
+        val http = HttpUtil(appRule.port)
+        val response = http.get<ArticlesDTO>("/api/articles/feed/popular")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+        assertEquals(response.body.articles.size, response.body.articlesCount)
+    }
+
+    @Test
+    fun `get popular feed with pagination`() {
+        val http = HttpUtil(appRule.port)
+        val response = http.get<ArticlesDTO>("/api/articles/feed/popular?limit=10&offset=0")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+    }
+
+    @Test
+    fun `get popular feed with auth`() {
+        appRule.http.createUser()
+        val response = appRule.http.get<ArticlesDTO>("/api/articles/feed/popular")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+        assertEquals(response.body.articles.size, response.body.articlesCount)
+    }
+
+    @Test
+    fun `search articles by query`() {
+        val http = HttpUtil(appRule.port)
+        val response = http.get<ArticlesDTO>("/api/articles/search?q=dragon")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+        assertEquals(response.body.articles.size, response.body.articlesCount)
+    }
+
+    @Test
+    fun `search articles with empty query`() {
+        val http = HttpUtil(appRule.port)
+        val response = http.get<ArticlesDTO>("/api/articles/search")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+    }
+
+    @Test
+    fun `search articles with pagination`() {
+        val http = HttpUtil(appRule.port)
+        val response = http.get<ArticlesDTO>("/api/articles/search?q=test&limit=5&offset=0")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+    }
+
+    @Test
+    fun `search articles with auth`() {
+        appRule.http.createUser()
+        val response = appRule.http.get<ArticlesDTO>("/api/articles/search?q=dragon")
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNotNull(response.body)
+        assertNotNull(response.body.articles)
+        assertEquals(response.body.articles.size, response.body.articlesCount)
+    }
 }

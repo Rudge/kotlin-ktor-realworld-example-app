@@ -2,6 +2,7 @@ package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.ArticlesDTO
 
@@ -27,6 +28,22 @@ class ArticleController {
 //            ctx.json(ArticlesDTO(articles, articles.size))
 //        }
         return ArticlesDTO(listOf(), 1)
+    }
+
+    suspend fun popularFeed(ctx: ApplicationCall) {
+        val limit = ctx.parameters["limit"] ?: "20"
+        val offset = ctx.parameters["offset"] ?: "0"
+        // TODO: articleService.findPopular(limit.toInt(), offset.toInt())
+        ctx.respond(ArticlesDTO(listOf(), 0))
+    }
+
+    suspend fun search(ctx: ApplicationCall) {
+        val query = ctx.parameters["q"] ?: ""
+        val limit = ctx.parameters["limit"] ?: "20"
+        val offset = ctx.parameters["offset"] ?: "0"
+        // TODO: articleService.search(query, limit.toInt(), offset.toInt())
+        // Would search articles by title and body content
+        ctx.respond(ArticlesDTO(listOf(), 0))
     }
 
     fun get(ctx: ApplicationCall): ArticleDTO {

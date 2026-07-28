@@ -1,6 +1,9 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.response.respond
+import io.realworld.app.domain.UserStats
+import io.realworld.app.domain.UserStatsDTO
 
 class ProfileController {
     //class ProfileController(private val userService: UserService) {
@@ -20,5 +23,19 @@ class ProfileController {
         ctx.parameters["username"]
 //            userService.unfollow(ctx.attribute("email")!!, usernameToUnfollow).also { profile ->
 //                ctx.json(ProfileDTO(profile))
+    }
+
+    suspend fun stats(ctx: ApplicationCall) {
+        val username = ctx.parameters["username"]
+        // TODO: profileService.getStats(username)
+        // Would query articles, comments, and favorites counts for the user
+        val response = UserStatsDTO(
+            stats = UserStats(
+                articlesCount = 0,
+                commentsCount = 0,
+                favoritesCount = 0
+            )
+        )
+        ctx.respond(response)
     }
 }
