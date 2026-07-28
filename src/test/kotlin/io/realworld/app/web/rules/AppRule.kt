@@ -19,6 +19,6 @@ class AppRule : ExternalResource() {
     }
 
     override fun after() {
-        app.stop(500, 500, TimeUnit.MILLISECONDS)
+        app.stop(500, 500)
     }
 }

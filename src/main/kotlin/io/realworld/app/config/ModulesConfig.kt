@@ -10,32 +10,32 @@ import io.realworld.app.web.controllers.CommentController
 import io.realworld.app.web.controllers.ProfileController
 import io.realworld.app.web.controllers.TagController
 import io.realworld.app.web.controllers.UserController
-import org.kodein.di.Kodein
-import org.kodein.di.generic.bind
-import org.kodein.di.generic.instance
-import org.kodein.di.generic.singleton
+import org.kodein.di.DI
+import org.kodein.di.bind
+import org.kodein.di.instance
+import org.kodein.di.singleton
 
 object ModulesConfig {
-    private val userModule = Kodein.Module("USER") {
-        bind() from singleton { UserController(instance()) }
-        bind() from singleton { UserService(JwtProvider, instance()) }
-        bind() from singleton { UserRepository() }
+    private val userModule = DI.Module("USER") {
+        bind<UserController>() with singleton { UserController(instance()) }
+        bind<UserService>() with singleton { UserService(JwtProvider, instance()) }
+        bind<UserRepository>() with singleton { UserRepository() }
     }
-    private val articleModule = Kodein.Module("ARTICLE") {
-        bind() from singleton { ArticleController() }
+    private val articleModule = DI.Module("ARTICLE") {
+        bind<ArticleController>() with singleton { ArticleController() }
     }
-    private val profileModule = Kodein.Module("PROFILE") {
-        bind() from singleton { ProfileController() }
+    private val profileModule = DI.Module("PROFILE") {
+        bind<ProfileController>() with singleton { ProfileController() }
     }
-    private val commentModule = Kodein.Module("COMMENT") {
-        bind() from singleton { CommentController() }
+    private val commentModule = DI.Module("COMMENT") {
+        bind<CommentController>() with singleton { CommentController() }
     }
-    private val tagModule = Kodein.Module("TAG") {
-        bind() from singleton { TagController(instance()) }
-        bind() from singleton { TagService(instance()) }
-        bind() from singleton { TagRepository() }
+    private val tagModule = DI.Module("TAG") {
+        bind<TagController>() with singleton { TagController(instance()) }
+        bind<TagService>() with singleton { TagService(instance()) }
+        bind<TagRepository>() with singleton { TagRepository() }
     }
-    internal val kodein = Kodein {
+    internal val kodein = DI {
         import(userModule)
         import(articleModule)
         import(profileModule)
