@@ -53,9 +53,9 @@ Tests:
 
 # Getting started
 
-You need just JVM installed.
+You need a JDK 17 or newer installed. The build targets JVM 17 bytecode and is verified in CI on JDK 17 and 21.
 
-The server is configured to start on [8080](http://localhost:7000).
+The server starts on [8080](http://localhost:8080) and all routes are served under `/api`, per the RealWorld spec.
 
 Build:
 > ./gradlew clean build
@@ -63,12 +63,67 @@ Build:
 Start the server:
 > ./gradlew run
 
+Run the tests:
+> ./gradlew test
+
 In the project have the [spec-api](https://github.com/Rudge/kotlin-ktor-realworld-example-app/tree/master/spec-api) with the README and collections to execute backend tests specs [realworld](https://github.com/gothinkster/realworld).
 
 Execute tests and start the server:
 
-> ./gradlew run & APIURL=http://localhost:8080 ./spec-api/run-api-tests.sh
+> ./gradlew run & APIURL=http://localhost:8080/api ./spec-api/run-api-tests.sh
 
-# Help
+## Popular articles feed
 
-Please fork and PR to improve the code.
+`GET /api/articles/feed/popular` returns articles ranked by favorite count, most favorited
+first, with newest-first as the tie-break so paging over an equally-favorited set is stable.
+
+Requires authentication (`Authorization: Token <jwt>`).
+
+| Query param | Default | Rules |
+|---|---|---|
+| `limit` | 20 | positive integer, max 100 |
+| `offset` | 0 | zero or a positive integer |
+
+```
+curl -H "Authorization: Token $TOKEN" \
+  "http://localhost:8080/api/articles/feed/popular?limit=20&offset=0"
+```
+
+```json
+{
+  "articles": [
+    {
+      "slug": "alpha-post",
+      "title": "Alpha post",
+      "description": "d",
+      "body": "b",
+      "tagList": ["dragons", "training"],
+      "createdAt": "2026-07-30T16:51:58.603+00:00",
+      "updatedAt": "2026-07-30T16:51:58.603+00:00",
+      "favorited": true,
+      "favoritesCount": 2,
+      "author": { "username": "author", "bio": null, "image": null, "following": false }
+    }
+  ],
+  "articlesCount": 3
+}
+```
+
+`favorited` and `author.following` are resolved for the authenticated caller.
+`articlesCount` is the total number of articles available, not the size of the page.
+
+Errors follow the RealWorld shape `{"errors":{"body":["..."]}}`: `401` without a valid token,
+`422` for a malformed `limit`/`offset`.
+
+## Supporting endpoints
+
+Implemented alongside the feed, since a ranking is only meaningful once articles can be
+created and favorited:
+
+| Method | Route | Notes |
+|---|---|---|
+| `POST` | `/api/articles` | Slug derived from the title, `-N` suffix on collision. `422` on a blank title or body |
+| `POST` | `/api/articles/{slug}/favorite` | Idempotent. `404` on an unknown slug |
+| `DELETE` | `/api/articles/{slug}/favorite` | No-op when not favorited. `404` on an unknown slug |
+
+All three require authentication. `GET /api/tags` returns tags collected from created articles.

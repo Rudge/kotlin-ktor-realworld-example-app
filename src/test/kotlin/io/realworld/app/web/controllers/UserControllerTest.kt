@@ -6,15 +6,16 @@ import io.realworld.app.web.rules.AppRule
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Ignore
-import org.junit.Rule
+import org.junit.ClassRule
 import org.junit.Test
 
-@Ignore
 class UserControllerTest {
-    @Rule
-    @JvmField
-    val appRule = AppRule()
+    companion object {
+        // One server per class: a per-test @Rule rebinds port 8080 for every method.
+        @ClassRule
+        @JvmField
+        val appRule = AppRule()
+    }
 
 //    @Test
 //    fun `invalid login without pass valid body`() {
@@ -33,7 +34,7 @@ class UserControllerTest {
         val password = "Test"
         appRule.http.registerUser(email, password, "success_login")
         val userDTO = UserDTO(User(email = email, password = password))
-        val response = appRule.http.post<UserDTO>("/users/login", userDTO)
+        val response = appRule.http.post<UserDTO>("/api/users/login", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.email, userDTO.user?.email)
@@ -48,7 +49,7 @@ class UserControllerTest {
                 "success_register"
             )
         )
-        val response = appRule.http.post<UserDTO>("/users", userDTO)
+        val response = appRule.http.post<UserDTO>("/api/users", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.username, userDTO.user?.username)
@@ -68,7 +69,7 @@ class UserControllerTest {
         val password = "Test"
         appRule.http.registerUser(email, password, "get_current")
         appRule.http.loginAndSetTokenHeader(email, password)
-        val response = appRule.http.get<UserDTO>("/user")
+        val response = appRule.http.get<UserDTO>("/api/user")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.user?.username)
@@ -84,7 +85,7 @@ class UserControllerTest {
 
         appRule.http.loginAndSetTokenHeader("update_email@valid_email.com", "Test")
         val userDTO = UserDTO(User(email = "update_user@update_test.com", password = "Test"))
-        val response = appRule.http.put<UserDTO>("/user", userDTO)
+        val response = appRule.http.put<UserDTO>("/api/user", userDTO)
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.email, userDTO.user?.email)

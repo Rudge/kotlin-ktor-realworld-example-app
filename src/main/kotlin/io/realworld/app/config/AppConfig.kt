@@ -7,10 +7,11 @@ import io.ktor.auth.jwt.jwt
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
-import io.ktor.http.HttpStatusCode
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.util.StdDateFormat
 import io.ktor.jackson.jackson
-import io.ktor.response.respond
 import io.ktor.routing.Routing
+import io.ktor.routing.route
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.ApplicationEngineFactory
@@ -20,7 +21,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.KtorExperimentalAPI
 import io.realworld.app.utils.JwtProvider
-import io.realworld.app.web.ErrorResponse
+import io.realworld.app.web.ErrorExceptionMapping
 import io.realworld.app.web.articles
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
@@ -37,7 +38,7 @@ const val SERVER_PORT = 8080
 @KtorExperimentalAPI
 @EngineAPI
 fun setup(isCio: Boolean = true): BaseApplicationEngine {
-    DbConfig.setup("jdbc:h2:mem:DATABASE_TO_UPPER=false;", "sa", "")
+    DbConfig.setup("jdbc:h2:mem:realworld;DB_CLOSE_DELAY=-1", "sa", "")
     return server(if (isCio) CIO else Netty)
 }
 
@@ -66,6 +67,10 @@ fun Application.mainModule() {
     install(CallLogging)
     install(ContentNegotiation) {
         jackson {
+            // RealWorld clients (and the bundled Postman collection) expect ISO-8601,
+            // not epoch millis.
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            setDateFormat(StdDateFormat().withColonInTimeZone(true))
         }
     }
     install(Authentication) {
@@ -80,18 +85,15 @@ fun Application.mainModule() {
         }
     }
     install(StatusPages) {
-        exception(Exception::class.java) {
-            val errorResponse = ErrorResponse(mapOf("error" to listOf("detail", this.toString())))
-            context.respond(
-                HttpStatusCode.InternalServerError, errorResponse
-            )
-        }
+        ErrorExceptionMapping.setup(this)
     }
 
     install(Routing) {
-        users(userController)
-        profiles(profileController)
-        articles(articleController, commentController)
-        tags(tagController)
+        route("api") {
+            users(userController)
+            profiles(profileController)
+            articles(articleController, commentController)
+            tags(tagController)
+        }
     }
 }

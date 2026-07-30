@@ -1,0 +1,79 @@
+# Scans the jars that actually ship — the runtime classpath assembled by installDist —
+# rather than the declared coordinates, so transitive dependencies are covered too.
+name: Dependency vulnerability scan
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  schedule:
+    # New advisories land against unchanged code, so re-scan weekly.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: grype (runtime classpath)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: true
+
+      - name: Assemble runtime classpath
+        run: ./gradlew installDist
+
+      # Gates on high and above: the current dependency set is clean at that level, so a new
+      # advisory (or a careless bump) should break the build rather than be noted and ignored.
+      - name: Scan with grype
+        id: scan
+        continue-on-error: true   # let the summary step run, then fail explicitly below
+        uses: anchore/scan-action@v6
+        with:
+          path: build/install/api/lib
+          fail-build: true
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Upload results to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true   # code scanning may be disabled on forks
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Summarize findings
+        if: always()
+        run: |
+          python3 - "${{ steps.scan.outputs.sarif }}" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          runs = json.load(open(sys.argv[1]))["runs"]
+          rules = {r["id"]: r for run in runs for r in run["tool"]["driver"].get("rules", [])}
+          results = [r for run in runs for r in run.get("results", [])]
+          print("### grype — runtime classpath\n")
+          print(f"**{len(results)} finding(s)** at severity high or above\n")
+          for r in results:
+              rule = rules.get(r["ruleId"], {})
+              print(f"- `{r['ruleId']}` — {rule.get('shortDescription', {}).get('text', '')}")
+          if not results:
+              print("No findings at or above the high cutoff.")
+          PY
+
+      - name: Fail when the scan found something
+        if: steps.scan.outcome == 'failure'
+        run: |
+          echo "grype reported findings at or above the high cutoff — see the job summary."
+          exit 1

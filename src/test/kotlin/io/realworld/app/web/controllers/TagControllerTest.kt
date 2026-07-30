@@ -7,15 +7,15 @@ import io.realworld.app.web.rules.AppRule
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
-import org.junit.Rule
+import org.junit.ClassRule
 import org.junit.Test
 
-@Ignore
 class TagControllerTest {
-    @Rule
-    @JvmField
-    val appRule = AppRule()
+    companion object {
+        @ClassRule
+        @JvmField
+        val appRule = AppRule()
+    }
 
     @Test
     fun `get all tags`() {
@@ -30,7 +30,8 @@ class TagControllerTest {
         appRule.http.registerUser(email, password, "user_name_test")
         appRule.http.loginAndSetTokenHeader(email, password)
 
-        appRule.http.post<ArticleDTO>("/api/articles", ArticleDTO(article))
+        val created = appRule.http.post<ArticleDTO>("/api/articles", ArticleDTO(article))
+        assertEquals(created.status, HttpStatus.SC_OK)
 
         val response = appRule.http.get<TagDTO>("/api/tags")
 

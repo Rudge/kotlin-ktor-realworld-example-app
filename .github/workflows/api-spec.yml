@@ -1,0 +1,63 @@
+# Bonus: runs the RealWorld Postman collection (spec-api/run-api-tests.sh) against the app.
+#
+# This job is INFORMATIONAL and does not gate the build: most of the collection exercises
+# article/comment/profile endpoints that are still stubs in this codebase, so it is expected
+# to report failures. It is wired up so the suite starts passing as those endpoints land.
+name: RealWorld API spec (informational)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ "master", "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  api-spec:
+    name: Postman collection vs running server
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start server
+        run: |
+          ./gradlew run &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/tags > /dev/null; then
+              echo "server up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "server failed to start within 120s"; exit 1
+
+      # Informational: failures here are expected while the article, comment and profile
+      # endpoints are stubs, so the step reports but does not fail the job.
+      - name: Run API spec tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          APIURL=http://localhost:8080/api ./spec-api/run-api-tests.sh 2>&1 | tee newman.log || true
+          {
+            echo '### RealWorld API spec (informational)'
+            echo ''
+            echo '```'
+            grep -E "^│ *(iterations|requests|test-scripts|assertions)" newman.log || tail -20 newman.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

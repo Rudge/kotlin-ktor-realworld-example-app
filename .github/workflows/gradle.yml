@@ -1,35 +1,62 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-
+# Build and test on every push/PR, across the supported JDK matrix.
+# Gradle dependencies are cached by gradle/actions/setup-gradle.
 name: CI with Gradle
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "main" ]
 
 permissions:
   contents: read
+  checks: write        # required by the JUnit reporter to publish a check run
+  pull-requests: write
 
 jobs:
   build:
-
+    name: Build & Test (JDK ${{ matrix.java }})
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '17', '21' ]
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '16'
-        distribution: temurin
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-    
-    - name: Execute Gradle build
-      run: ./gradlew build
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: temurin
+
+      # Caches ~/.gradle/caches and ~/.gradle/wrapper, keyed on the build files.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
+
+      - name: Build
+        run: ./gradlew clean build -x test
+
+      - name: Test
+        run: ./gradlew test
+
+      - name: Publish test results
+        uses: mikepenz/action-junit-report@v4
+        if: always()   # report failures too, not just green runs
+        with:
+          report_paths: build/test-results/test/TEST-*.xml
+          check_name: JUnit results (JDK ${{ matrix.java }})
+          detailed_summary: true
+          fail_on_failure: true
+
+      - name: Upload HTML test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report-jdk${{ matrix.java }}
+          path: build/reports/tests/test
+          retention-days: 7
