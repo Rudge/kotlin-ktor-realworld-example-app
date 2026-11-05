@@ -1,6 +1,6 @@
 package io.realworld.app.web.controllers
 
-import io.ktor.application.ApplicationCall
+import io.ktor.server.application.ApplicationCall
 
 class ProfileController {
     //class ProfileController(private val userService: UserService) {

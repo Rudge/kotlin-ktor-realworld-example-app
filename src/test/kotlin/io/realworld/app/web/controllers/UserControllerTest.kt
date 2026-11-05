@@ -3,7 +3,7 @@ package io.realworld.app.web.controllers
 import io.realworld.app.domain.User
 import io.realworld.app.domain.UserDTO
 import io.realworld.app.web.rules.AppRule
-import org.apache.http.HttpStatus
+import io.realworld.app.web.util.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Ignore

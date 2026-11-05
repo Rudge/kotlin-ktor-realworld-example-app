@@ -1,51 +1,59 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
+    id 'application'
+}
+
 group 'io.realworld'
 version '1.0-SNAPSHOT'
 
-buildscript {
-    ext {
-        kotlin_version = "1.3.+"
-        slf4j_version = "2.0.9"
-        ktor_version = "1.2.3"
-        kodein_version = "6.1.0"
-        hikaricp_version = "5.1.0"
-        h2_version = "2.2.224"
-        exposed_version = "0.14.1"
-        junit_version = "4.13.2"
-        unirest_version = "1.4.9"
-    }
+ext {
+    ktor_version = "3.6.1"
+    kodein_version = "7.33.0"
+    exposed_version = "1.6.1"
+    hikaricp_version = "7.1.0"
+    h2_version = "2.5.252"
+    java_jwt_version = "4.6.2"
+    slf4j_version = "2.0.20"
+    junit_version = "4.13.2"
+}
 
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = "io.realworld.app.AppKt"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
     }
 }
 
-apply plugin: 'kotlin'
-apply plugin: 'application'
-mainClassName = "io.realworld.app.AppKt"
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
-    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    api "org.slf4j:slf4j-simple:$slf4j_version"
-    api "io.ktor:ktor-server-netty:$ktor_version"
-    api "io.ktor:ktor-server-cio:$ktor_version"
-    api "io.ktor:ktor-jackson:$ktor_version"
-    api "io.ktor:ktor-auth-jwt:$ktor_version"
-    implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
-    api "com.zaxxer:HikariCP:$hikaricp_version"
-    api "com.h2database:h2:$h2_version"
-    api "org.jetbrains.exposed:exposed:$exposed_version"
+    implementation "org.slf4j:slf4j-simple:$slf4j_version"
+    implementation "io.ktor:ktor-server-core:$ktor_version"
+    implementation "io.ktor:ktor-server-cio:$ktor_version"
+    implementation "io.ktor:ktor-server-netty:$ktor_version"
+    implementation "io.ktor:ktor-server-auth:$ktor_version"
+    implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
+    implementation "io.ktor:ktor-server-content-negotiation:$ktor_version"
+    implementation "io.ktor:ktor-server-status-pages:$ktor_version"
+    implementation "io.ktor:ktor-server-call-logging:$ktor_version"
+    implementation "io.ktor:ktor-serialization-jackson:$ktor_version"
+    implementation "com.auth0:java-jwt:$java_jwt_version"
+    implementation "org.kodein.di:kodein-di:$kodein_version"
+    implementation "com.zaxxer:HikariCP:$hikaricp_version"
+    implementation "com.h2database:h2:$h2_version"
+    implementation "org.jetbrains.exposed:exposed-core:$exposed_version"
+    implementation "org.jetbrains.exposed:exposed-dao:$exposed_version"
+    implementation "org.jetbrains.exposed:exposed-jdbc:$exposed_version"
 
-    testCompile "junit:junit:$junit_version"
-    testCompile "com.mashape.unirest:unirest-java:$unirest_version"
+    testImplementation "junit:junit:$junit_version"
 }

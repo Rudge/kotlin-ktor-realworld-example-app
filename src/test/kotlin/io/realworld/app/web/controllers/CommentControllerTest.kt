@@ -4,7 +4,7 @@ import io.realworld.app.domain.Comment
 import io.realworld.app.domain.CommentDTO
 import io.realworld.app.domain.CommentsDTO
 import io.realworld.app.web.rules.AppRule
-import org.apache.http.HttpStatus
+import io.realworld.app.web.util.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Ignore

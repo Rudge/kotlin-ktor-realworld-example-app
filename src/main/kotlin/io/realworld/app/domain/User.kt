@@ -1,6 +1,5 @@
 package io.realworld.app.domain
 
-import io.ktor.auth.Principal
 import io.realworld.app.ext.isEmailValid
 
 data class UserDTO(val user: User? = null) {
@@ -44,4 +43,4 @@ data class User(
     val password: String? = null,
     val bio: String? = null,
     val image: String? = null
-) : Principal
+)

@@ -6,7 +6,7 @@ import io.realworld.app.domain.ArticlesDTO
 import io.realworld.app.domain.ProfileDTO
 import io.realworld.app.web.rules.AppRule
 import io.realworld.app.web.util.HttpUtil
-import org.apache.http.HttpStatus
+import io.realworld.app.web.util.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
