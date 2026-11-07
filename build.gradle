@@ -1,51 +1,62 @@
-group 'io.realworld'
-version '1.0-SNAPSHOT'
-
-buildscript {
-    ext {
-        kotlin_version = "1.3.+"
-        slf4j_version = "2.0.9"
-        ktor_version = "1.2.3"
-        kodein_version = "6.1.0"
-        hikaricp_version = "5.1.0"
-        h2_version = "2.2.224"
-        exposed_version = "0.14.1"
-        junit_version = "4.13.2"
-        unirest_version = "1.4.9"
-    }
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
+    id 'application'
 }
 
-apply plugin: 'kotlin'
-apply plugin: 'application'
-mainClassName = "io.realworld.app.AppKt"
+group = 'io.realworld'
+version = '1.0-SNAPSHOT'
+
+ext {
+    ktor_version = '3.6.1'
+    kodein_version = '7.33.0'
+    exposed_version = '1.6.1'
+    hikaricp_version = '5.1.0'
+    h2_version = '2.2.224'
+    slf4j_version = '2.0.9'
+    junit_version = '4.13.2'
+    unirest_version = '1.4.9'
+}
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    jcenter()
 }
 
 dependencies {
-    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    api "org.slf4j:slf4j-simple:$slf4j_version"
-    api "io.ktor:ktor-server-netty:$ktor_version"
-    api "io.ktor:ktor-server-cio:$ktor_version"
-    api "io.ktor:ktor-jackson:$ktor_version"
-    api "io.ktor:ktor-auth-jwt:$ktor_version"
-    implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
-    api "com.zaxxer:HikariCP:$hikaricp_version"
-    api "com.h2database:h2:$h2_version"
-    api "org.jetbrains.exposed:exposed:$exposed_version"
+    // Security pins for transitive libraries (Trivy HIGH: jackson-core/databind 2.22.2, guava 33.6.0).
+    // Remove once Ktor's own dependency versions are at or above these.
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.22.3')
+    constraints {
+        implementation('com.google.guava:guava:33.7.2-jre') { because 'DoS CVE-2026-102554 in 33.6.0' }
+    }
 
-    testCompile "junit:junit:$junit_version"
-    testCompile "com.mashape.unirest:unirest-java:$unirest_version"
+    implementation "io.ktor:ktor-server-core:$ktor_version"
+    implementation "io.ktor:ktor-server-cio:$ktor_version"
+    implementation "io.ktor:ktor-server-auth:$ktor_version"
+    implementation "io.ktor:ktor-server-auth-jwt:$ktor_version"
+    implementation "io.ktor:ktor-server-content-negotiation:$ktor_version"
+    implementation "io.ktor:ktor-server-status-pages:$ktor_version"
+    implementation "io.ktor:ktor-server-call-logging:$ktor_version"
+    implementation "io.ktor:ktor-serialization-jackson:$ktor_version"
+    implementation "org.kodein.di:kodein-di-jvm:$kodein_version"
+    implementation "com.zaxxer:HikariCP:$hikaricp_version"
+    implementation "com.h2database:h2:$h2_version"
+    implementation "org.jetbrains.exposed:exposed-core:$exposed_version"
+    implementation "org.jetbrains.exposed:exposed-jdbc:$exposed_version"
+    runtimeOnly "org.slf4j:slf4j-simple:$slf4j_version"
+
+    testImplementation "junit:junit:$junit_version"
+    testImplementation "com.mashape.unirest:unirest-java:$unirest_version"
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+application {
+    mainClass = 'io.realworld.app.AppKt'
+}
+
+// Reproducible resolution: pins every transitive version (run with --write-locks to refresh).
+dependencyLocking {
+    lockAllConfigurations()
 }

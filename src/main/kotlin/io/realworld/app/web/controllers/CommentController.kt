@@ -1,7 +1,7 @@
 package io.realworld.app.web.controllers
 
-import io.ktor.application.ApplicationCall
-import io.ktor.request.receive
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.receive
 import io.realworld.app.domain.CommentDTO
 
 class CommentController {

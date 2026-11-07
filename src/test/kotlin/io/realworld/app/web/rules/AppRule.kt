@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 class AppRule : ExternalResource() {
     private val app = setup()
     lateinit var http: HttpUtil
-    val port = app.environment.connectors.find { it.type == ConnectorType.HTTP }?.port ?: SERVER_PORT
+    val port = app.engineConfig.connectors.find { it.type == ConnectorType.HTTP }?.port ?: SERVER_PORT
 
     override fun before() {
         app.start()

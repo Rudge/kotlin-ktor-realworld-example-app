@@ -3,7 +3,7 @@ package io.realworld.app.config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.h2.tools.Server
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.v1.jdbc.Database
 
 object DbConfig {
     fun setup(jdbcUrl: String, username: String, password: String) {
