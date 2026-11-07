@@ -1,0 +1,11 @@
+.git
+.gradle
+.idea
+build
+out
+*.md
+spec-api
+.github
+.travis.yml
+Dockerfile
+.dockerignore

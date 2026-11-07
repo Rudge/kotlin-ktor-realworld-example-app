@@ -1,12 +1,12 @@
 package io.realworld.app.web
 
-import io.ktor.auth.authenticate
-import io.ktor.routing.Routing
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.put
-import io.ktor.routing.route
+import io.ktor.server.auth.authenticate
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
 import io.realworld.app.web.controllers.ArticleController
 import io.realworld.app.web.controllers.CommentController
 import io.realworld.app.web.controllers.ProfileController
@@ -15,13 +15,13 @@ import io.realworld.app.web.controllers.UserController
 
 fun Routing.users(userController: UserController) {
     route("users") {
-        post { userController.register(this.context) }
-        post("login") { userController.login(this.context) }
+        post { userController.register(call) }
+        post("login") { userController.login(call) }
     }
     route("user") {
         authenticate {
-            get { userController.getCurrent(this.context) }
-            put { userController.update(this.context) }
+            get { userController.getCurrent(call) }
+            put { userController.update(call) }
         }
     }
 }
@@ -29,12 +29,12 @@ fun Routing.users(userController: UserController) {
 fun Routing.profiles(profileController: ProfileController) {
     route("profiles/{username}") {
         authenticate(optional = true) {
-            get { profileController.get(this.context) }
+            get { profileController.get(call) }
         }
         authenticate {
             route("follow") {
-                post { profileController.follow(this.context) }
-                delete { profileController.unfollow(this.context) }
+                post { profileController.follow(call) }
+                delete { profileController.unfollow(call) }
             }
         }
     }
@@ -43,27 +43,27 @@ fun Routing.profiles(profileController: ProfileController) {
 fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
     route("articles") {
         authenticate {
-            get("feed") { articleController.feed(this.context) }
+            get("feed") { articleController.feed(call) }
             route("{slug}") {
                 route("comments") {
-                    post { commentController.add(this.context) }
+                    post { commentController.add(call) }
                     authenticate(optional = true) {
-                        get { commentController.findBySlug(this.context) }
+                        get { commentController.findBySlug(call) }
                     }
-                    delete("{id}") { commentController.delete(this.context) }
+                    delete("{id}") { commentController.delete(call) }
                 }
                 route("favorite") {
-                    post { articleController.favorite(this.context) }
-                    delete { articleController.unfavorite(this.context) }
+                    post { articleController.favorite(call) }
+                    delete { articleController.unfavorite(call) }
                 }
-                get { articleController.get(this.context) }
-                put { articleController.update(this.context) }
-                delete { articleController.delete(this.context) }
+                get { articleController.get(call) }
+                put { articleController.update(call) }
+                delete { articleController.delete(call) }
             }
             authenticate(optional = true) {
-                get { articleController.findBy(this.context) }
+                get { articleController.findBy(call) }
             }
-            post { articleController.create(this.context) }
+            post { articleController.create(call) }
         }
     }
 }
@@ -71,7 +71,7 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
 fun Routing.tags(tagController: TagController) {
     route("tags") {
         authenticate(optional = true) {
-            get { tagController.get(this.context) }
+            get { tagController.get(call) }
         }
     }
 }
